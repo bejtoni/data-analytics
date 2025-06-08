@@ -2,80 +2,89 @@ import pandas as pd
 from datetime import datetime
 from sqlalchemy import text
 
-def scd2_upsert(pg_engine, table_name, key_column, all_columns):
+def scd2_upsert(engine, table_name: str, key_column: str):
+    print(f"\n🔁 START: SCD2 upsert za tabelu: {table_name}")
     now = datetime.now()
 
-    print(f"\n🔁 START: SCD2 upsert za tabelu: {table_name}")
+    # 1. Učitaj nove podatke iz STAGING (ecommerce)
+    new_df = pd.read_sql(f"SELECT * FROM ecommerce.{table_name}", engine).copy()
+    print(f"🟢 {len(new_df)} redova u new_df")
 
-    # 1. Učitaj podatke iz staginga (landing)
-    new_df = pd.read_sql(f"SELECT {', '.join(all_columns)} FROM ecommerce.{table_name}", pg_engine)
-    print(f"📥 Učitavam nove podatke...\n✅ Kolone u new_df: {new_df.columns}\n🟢 new_df redova: {len(new_df)}")
+    # 2. Učitaj stare podatke iz ARCHIVE
+    try:
+        old_df = pd.read_sql(f"SELECT * FROM archive.{table_name}", engine).copy()
+        print(f"🔵 {len(old_df)} redova u old_df")
+    except Exception as e:
+        print(f"⚠️ Nema archive.{table_name}: {e}")
+        old_df = pd.DataFrame()
 
-    # Pretvori sve "NaT" u None
-    for col in all_columns:
-        if pd.api.types.is_datetime64_any_dtype(new_df[col]):
-            new_df[col] = new_df[col].where(new_df[col].notna(), None)
+    # 3. Ako je arhiva prazna – sve je novo
+    if old_df.empty:
+        new_df["start_date"] = now
+        new_df["end_date"] = "9999-12-31"
+        new_df["updated"] = now
+        new_df["process"] = "initial_or_first_incremental"
 
-    # 2. Učitaj aktivne podatke iz arhive
-    old_df = pd.read_sql(f"""
-        SELECT {', '.join(all_columns + ['start_date', 'end_date'])}
-        FROM archive.{table_name}
-        WHERE end_date = '9999-12-31'
-    """, pg_engine)
-    print(f"📦 Učitavam stare podatke...\n🔵 old_df redova: {len(old_df)}")
+        new_df.to_sql(table_name, con=engine, schema="archive", if_exists="append", index=False)
+        print(f"✅ Ubaceno {len(new_df)} redova u archive.{table_name}")
+        return
 
-    # 3. Merge
+    # 4. Poređenje (isključujemo sistemske kolone)
+    exclude_cols = ["start_date", "end_date", "updated", "process"]
+    compare_cols = [col for col in new_df.columns if col not in exclude_cols]
 
-    print(f"new_df is empty: {new_df.empty}")
-    print(f"old_df is empty: {old_df.empty}")
+    merged = pd.merge(new_df[compare_cols], old_df[compare_cols], how="left", indicator=True)
+    new_versions = new_df.loc[merged['_merge'] == 'left_only'].copy()
+    print(f"🆕 {len(new_versions)} novih/redigovanih redova")
 
-    merged = pd.merge(new_df, old_df, on=key_column, how="outer", indicator=True, suffixes=('', '_old'))
-    print(f"Columns in merged dataframe: {merged.columns}")
-    merged["_merge_flag"] = merged["_merge"]
-    merged.drop(columns=["_merge"], inplace=True)
+    if new_versions.empty:
+        print(f"✅ Nema promjena za {table_name}")
+        return
 
-    print(f"🔗 Radim merge()...\n📍 Merge rezultat: {len(merged)} redova")
+    # 5. Dodaj sistemske kolone
+    new_versions["start_date"] = now
+    new_versions["end_date"] = "9999-12-31"
+    new_versions["updated"] = now
+    new_versions["process"] = "incremental_upsert"
 
-    inserts, updates = [], []
+    with engine.begin() as conn:
+        # 6. Specijalna logika za exchange_rates
+        if table_name == "exchange_rates":
+            for _, row in new_versions.iterrows():
+                conn.execute(text(f"""
+                    UPDATE archive.exchange_rates
+                    SET end_date = :now
+                    WHERE target_currency = :target
+                    AND end_date = '9999-12-31'
+                """), {
+                    "now": now,
+                    "target": row["target_currency"]
+                })
+        else:
+            # Standardni slučaj – koristi key_column (npr. customer_id)
+            if isinstance(key_column, list):  # Composite key (e.g., order_items)
+                key_combos = new_versions[key_column].drop_duplicates().values.tolist()
+                for combo in key_combos:
+                    where_clause = " AND ".join([f"{col} = :{col}" for col in key_column])
+                    params = {col: val for col, val in zip(key_column, combo)}
+                    params["now"] = now
+                    conn.execute(text(f"""
+                        UPDATE archive.{table_name}
+                        SET end_date = :now
+                        WHERE {where_clause}
+                        AND end_date = '9999-12-31'
+                    """), params)
+            else:
+                keys_to_close = new_versions[key_column].unique().tolist()
+                sql_update = text(f"""
+                    UPDATE archive.{table_name}
+                    SET end_date = :now
+                    WHERE {key_column} = :key
+                    AND end_date = '9999-12-31'
+                """)
+                for key in keys_to_close:
+                    conn.execute(sql_update, {"now": now, "key": key})
 
-    for row in merged.itertuples(index=False):
-        row_dict = row._asdict()
-        merge_flag = row_dict["_merge_flag"]
-
-        if merge_flag == 'left_only':
-            inserts.append(row)
-        elif merge_flag == 'both':
-            changed = any(
-                row_dict[col] != row_dict.get(f"{col}_old")
-                for col in all_columns if f"{col}_old" in row_dict
-            )
-            if changed:
-                updates.append(row)
-
-    print(f"➕ Novi redovi za insert: {len(inserts)}")
-    print(f"✏️ Redovi sa promjenama za update: {len(updates)}")
-
-    with pg_engine.begin() as conn:
-        # a) Zatvori stare redove
-        for row in updates:
-            conn.execute(text(f"""
-                UPDATE archive.{table_name}
-                SET end_date = :now
-                WHERE {key_column} = :key AND end_date = '9999-12-31'
-            """), {"now": now, "key": getattr(row, key_column)})
-
-        # b) Ubaci nove redove
-        for row in inserts + updates:
-            values = {col: getattr(row, col) for col in all_columns}
-            values.update({
-                "start_date": now,
-                "end_date": pd.Timestamp("9999-12-31"),
-            })
-            columns = ", ".join(values.keys())
-            placeholders = ", ".join([f":{k}" for k in values.keys()])
-            conn.execute(text(f"""
-                INSERT INTO archive.{table_name} ({columns}, start_date, end_date)
-                VALUES ({placeholders}, :start_date, :end_date)
-            """), values)
-
-    print(f"✅ archive.{table_name} upsert completed.")
+        # 7. Ubaci nove redove
+        new_versions.to_sql(table_name, con=engine, schema="archive", if_exists="append", index=False)
+        print(f"✅ Ubaceno {len(new_versions)} novih redova u archive.{table_name}")

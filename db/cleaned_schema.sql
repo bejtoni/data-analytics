@@ -18,3 +18,9 @@ SELECT * FROM archive.order_reviews WHERE end_date = '9999-12-31';
 
 CREATE OR REPLACE VIEW cleaned.order_payments AS
 SELECT * FROM archive.order_payments WHERE end_date = '9999-12-31';
+
+CREATE OR REPLACE VIEW cleaned.order_items AS
+SELECT * FROM archive.order_items WHERE end_date = '9999-12-31';
+
+CREATE OR REPLACE VIEW cleaned.exchange_rates AS
+SELECT * FROM archive.exchange_rates WHERE end_date = '9999-12-31';

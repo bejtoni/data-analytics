@@ -86,3 +86,31 @@ CREATE TABLE IF NOT EXISTS archive.order_payments (
     process TEXT,
     PRIMARY KEY (order_id, payment_sequential, start_date)
 );
+
+CREATE TABLE IF NOT EXISTS archive.exchange_rates (
+    date TIMESTAMP,
+    base_currency VARCHAR,
+    target_currency VARCHAR,
+    rate DECIMAL,
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
+    updated TIMESTAMP,
+    process TEXT,
+    PRIMARY KEY (date, base_currency, target_currency, start_date)
+);
+
+CREATE TABLE IF NOT EXISTS archive.order_items (
+    order_id VARCHAR,
+    order_item_id INTEGER,
+    product_id VARCHAR,
+    seller_id VARCHAR,
+    shipping_limit_date TIMESTAMP,
+    price DECIMAL,
+    freight_value DECIMAL,
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
+    updated TIMESTAMP,
+    process TEXT,
+    PRIMARY KEY (order_id, order_item_id, start_date)
+);
+
