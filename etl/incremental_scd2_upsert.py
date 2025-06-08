@@ -35,7 +35,7 @@ def scd2_upsert(engine, table_name: str, key_column: str):
 
     merged = pd.merge(new_df[compare_cols], old_df[compare_cols], how="left", indicator=True)
     new_versions = new_df.loc[merged['_merge'] == 'left_only'].copy()
-    print(f"🆕 {len(new_versions)} novih/redigovanih redova")
+    print(f"🆕 {len(new_versions)} novih redova")
 
     if new_versions.empty:
         print(f"✅ Nema promjena za {table_name}")

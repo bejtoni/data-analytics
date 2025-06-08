@@ -12,7 +12,7 @@ mssql_engine = sa.create_engine(
 
 # ✅ Učitaj iz cleaned i dodaj samo nove redove u fact_order
 def load_fact_order():
-    print("⏳ Loading fact_order (incremental)...")
+    print("⏳ Loading fact_order ...")
 
     # 1. Učitaj podatke iz cleaned sheme
     orders = pd.read_sql("SELECT * FROM cleaned.orders", pg_engine)

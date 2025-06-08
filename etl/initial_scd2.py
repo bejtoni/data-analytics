@@ -1,4 +1,4 @@
-# etl/scd2_initial.py
+# etl/initial_scd2.py
 import pandas as pd
 from datetime import datetime
 

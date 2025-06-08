@@ -1,4 +1,4 @@
-from etl.scd2_initial import scd2_initial_load
+from etl.initial_scd2 import scd2_initial_load
 import sqlalchemy as sa
 import psycopg2
 

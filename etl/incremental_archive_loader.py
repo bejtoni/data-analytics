@@ -1,4 +1,4 @@
-from etl.scd2_upsert import scd2_upsert
+from etl.incremental_scd2_upsert import scd2_upsert
 import sqlalchemy as sa
 
 engine = sa.create_engine("postgresql+psycopg2://postgres:alen@localhost:5432/ecommerce")
@@ -14,7 +14,7 @@ TABLES = {
     "order_items": ["order_id", "order_item_id"]
 }
 
-def run_all_archive_loads():
+def run_incremental_archive_loads():
     print("🔁 Incremental SCD2 upsert")
     for table, key in TABLES.items():
         try:
