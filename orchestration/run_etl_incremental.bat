@@ -1,7 +1,11 @@
 @echo off
+
 echo 🟡 Starting incremental ETL...
 
-C:\Users\bejti\AppData\Local\Programs\Python\Python313\python.exe "C:\Users\bejti\PycharmProjects\BIP\orchestration\run_etl_incremental.py"
+cd C:\Users\Alen\PycharmProjects\PythonProject\data-analytics
+call ..\.venv\Scripts\activate.bat
+python orchestration\run_etl_incremental.py
 
 echo ✅ ETL finished.
+
 pause
