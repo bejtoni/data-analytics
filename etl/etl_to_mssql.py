@@ -1,13 +1,13 @@
 import pandas as pd
 import sqlalchemy as sa
-from etl.utils import convert_timestamp_columns  # ← tvoj helper
+from etl.utils import convert_timestamp_columns  # helper za datetime kolone
 
-# 🔧 CONNECTIONS
+# 🔧 Konekcije
 
-# PostgreSQL (SQLAlchemy konekcija — više nema warninga)
+# PostgreSQL (staging, archive, cleaned)
 pg_engine = sa.create_engine("postgresql+psycopg2://postgres:alen@localhost:5432/ecommerce")
 
-# MSSQL DWH (trusted_connection=yes)
+# MSSQL DWH
 mssql_conn_str = (
     "mssql+pyodbc://localhost/bi_dwh?"
     "driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
@@ -18,7 +18,7 @@ engine = sa.create_engine(mssql_conn_str)
 # ✅ DIM_CUSTOMER
 def load_dim_customer():
     df = pd.read_sql(
-        "SELECT customer_id, customer_city, customer_state FROM ecommerce.customers",
+        "SELECT customer_id, customer_city, customer_state FROM cleaned.customers",
         pg_engine
     )
     df.columns = ['customer_id', 'city', 'state']
@@ -37,7 +37,7 @@ def load_dim_product():
         p.product_weight_g,
         p.product_name_lenght,
         p.product_description_lenght
-    FROM ecommerce.products p
+    FROM cleaned.products p
     LEFT JOIN ecommerce.product_category_name_translation t
         ON p.product_category_name = t.product_category_name
     """
@@ -52,7 +52,7 @@ def load_dim_product():
 # ✅ DIM_SELLER
 def load_dim_seller():
     df = pd.read_sql(
-        "SELECT seller_id, seller_city, seller_state FROM ecommerce.sellers",
+        "SELECT seller_id, seller_city, seller_state FROM cleaned.sellers",
         pg_engine
     )
     df.columns = ['seller_id', 'city', 'state']
@@ -65,7 +65,7 @@ def load_dim_seller():
 # ✅ DIM_DATE
 def load_dim_date():
     df = pd.read_sql(
-        "SELECT DISTINCT order_purchase_timestamp AS date FROM ecommerce.orders",
+        "SELECT DISTINCT order_purchase_timestamp AS date FROM cleaned.orders",
         pg_engine
     )
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
@@ -84,12 +84,10 @@ def load_dim_date():
     print("✅ dim_date loaded")
 
 
-
-
-# ✅ ENTRY POINT
+# ✅ Glavni ulaz
 def load_all_to_dwh():
     load_dim_customer()
     load_dim_product()
     load_dim_seller()
     load_dim_date()
-    print("✅ All DWH dimensions loaded.")
+    print("✅ All DWH dimensions loaded")

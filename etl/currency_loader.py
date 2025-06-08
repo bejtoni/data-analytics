@@ -1,26 +1,40 @@
 import pandas as pd
-import sqlalchemy as sa
-from sqlalchemy import text
 import glob
 import os
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import URL
 
-# 🔧 MSSQL engine
-mssql_engine = sa.create_engine(
-    "mssql+pyodbc://localhost/bi_dwh?"
-    "driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+# 🔧 MSSQL engine (bi_dwh database)
+# mssql_engine = create_engine(
+#     "mssql+pyodbc://localhost/bi_dwh?driver=ODBC+Driver+17+for+SQL+Server;Trusted_Connection=yes"
+# )
+
+
+connection_url = URL.create(
+    "mssql+pyodbc",
+    username=None,
+    password=None,
+    host="localhost",
+    database="bi_dwh",
+    query={
+        "driver": "ODBC Driver 17 for SQL Server",
+        "Trusted_Connection": "yes"
+    }
 )
 
+mssql_engine = create_engine(connection_url)
 
-# ✅ Kreiraj dim_currency ako ne postoji
+
+# ✅ Kreiraj dbo.dim_currency ako ne postoji
 def create_dim_currency_if_not_exists(engine):
     with engine.connect() as conn:
         conn.execute(text("""
         IF NOT EXISTS (
             SELECT * FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_NAME = 'dim_currency'
+            WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'dim_currency'
         )
         BEGIN
-            CREATE TABLE dim_currency (
+            CREATE TABLE dbo.dim_currency (
                 date_key DATETIME,
                 base_currency VARCHAR(10),
                 target_currency VARCHAR(10),
@@ -29,17 +43,15 @@ def create_dim_currency_if_not_exists(engine):
             )
         END
         """))
-        print("✅ dim_currency tabela postoji ili je kreirana.")
+        conn.commit()
+        print("✅ dbo.dim_currency tabela postoji ili je kreirana.")
 
 
-# ✅ Učitaj i ubaci najnoviji exchange_rates CSV u MSSQL
+# ✅ Učitaj i upiši najnoviji CSV u dbo.dim_currency
 def load_dim_currency():
     print("⏳ Loading dim_currency...")
 
-    # 1. Kreiraj tabelu ako ne postoji
-    create_dim_currency_if_not_exists(mssql_engine)
-
-    # 2. Pronađi najnoviji CSV fajl
+    # 1. Pronađi najnoviji exchange_rates_*.csv fajl
     files = sorted(glob.glob("data/api/exchange_rates_*.csv"), reverse=True)
     if not files:
         print("❌ Nema exchange_rates_*.csv fajlova.")
@@ -48,13 +60,11 @@ def load_dim_currency():
     csv_path = files[0]
     print(f"📂 Koristi se fajl: {os.path.basename(csv_path)}")
 
-    # 3. Učitaj CSV
+    # 2. Učitaj CSV i preimenuj kolone ako treba
     df = pd.read_csv(csv_path)
-    df = df.where(pd.notnull(df), None)
+    df.columns = [c.lower() for c in df.columns]
 
-    # 4. Preimenuj kolone ako su u starom formatu
-    df.columns = [col.lower() for col in df.columns]
-    if 'date' in df.columns:
+    if "date" in df.columns:
         df.rename(columns={
             "date": "date_key",
             "base": "base_currency",
@@ -62,27 +72,36 @@ def load_dim_currency():
         }, inplace=True)
 
     df["date_key"] = pd.to_datetime(df["date_key"], errors="coerce")
+    df = df[["date_key", "base_currency", "target_currency", "rate"]]
 
-    # 5. Učitaj već postojeće redove
+    # 3. Kreiraj tabelu ako ne postoji
+    create_dim_currency_if_not_exists(mssql_engine)
+
+    # 4. Pročitaj već postojeće redove
     with mssql_engine.connect() as conn:
         existing = pd.read_sql(
-            "SELECT date_key, base_currency, target_currency FROM dim_currency",
+            "SELECT date_key, base_currency, target_currency FROM dbo.dim_currency",
             conn
         )
 
-    # 6. Uporedi i filtriraj samo nove redove
+    # 5. Nađi samo nove redove
     merged = df.merge(
         existing,
         how="left",
         on=["date_key", "base_currency", "target_currency"],
         indicator=True
     )
-
     new_rows = merged[merged["_merge"] == "left_only"].drop(columns=["_merge"])
 
-    # 7. Ubaci u MSSQL
+    # 6. Ubaci samo nove redove
     if not new_rows.empty:
-        new_rows.to_sql("dim_currency", con=mssql_engine, if_exists="append", index=False)
-        print(f"✅ dim_currency loaded ({len(new_rows)} novih redova)")
+        new_rows.to_sql(
+            "dim_currency",
+            con=mssql_engine,
+            schema="dbo",
+            if_exists="append",
+            index=False
+        )
+        print(f"✅ Ubaceno {len(new_rows)} novih redova u dbo.dim_currency.")
     else:
-        print("ℹ️ Nema novih redova za dim_currency")
+        print("ℹ️ Nema novih redova za ubacivanje.")
