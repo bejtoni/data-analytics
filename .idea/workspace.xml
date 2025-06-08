@@ -5,20 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="683fbbfb-32c3-4258-a1c2-41c114ffcd1c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/db/insert.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/csv-editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/csv-editor.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db/changed_data_insert.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/etl/archive_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/etl/incremental_archive_loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etl/create_star_schema_tables.py" beforeDir="false" afterPath="$PROJECT_DIR$/etl/mssql_create_fact_dim.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etl/etl_to_mssql.py" beforeDir="false" afterPath="$PROJECT_DIR$/etl/mssql_etl.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etl/fact_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/etl/mssql_fact_loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etl/fetch_rates.py" beforeDir="false" afterPath="$PROJECT_DIR$/etl/staging_fetch_rates.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etl/initial_archive_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/etl/initial_archive_loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etl/load_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/etl/staging_load_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etl/scd2_initial.py" beforeDir="false" afterPath="$PROJECT_DIR$/etl/initial_scd2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etl/scd2_upsert.py" beforeDir="false" afterPath="$PROJECT_DIR$/etl/incremental_scd2_upsert.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/orchestration/data/api/exchange_rates_2025-06-08-1914.csv" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/orchestration/run_etl_incremental.py" beforeDir="false" afterPath="$PROJECT_DIR$/orchestration/run_etl_incremental.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -129,6 +118,7 @@
       <workItem from="1749375350593" duration="310000" />
       <workItem from="1749378795517" duration="11021000" />
       <workItem from="1749397816276" duration="2568000" />
+      <workItem from="1749412920249" duration="574000" />
     </task>
     <servers />
   </component>
@@ -139,7 +129,7 @@
     <option featureType="com.intellij.fileTypeFactory" implementationName="*.bat" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/BIP$main.coverage" NAME="main Coverage Results" MODIFIED="1749411143984" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/BIP$main.coverage" NAME="main Coverage Results" MODIFIED="1749411735482" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/data_analytics$main.coverage" NAME="main Coverage Results" MODIFIED="1749390102326" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
