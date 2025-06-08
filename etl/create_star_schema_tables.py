@@ -101,16 +101,18 @@ def create_all_star_schema_tables():
         )
         BEGIN
             CREATE TABLE dbo.fact_order (
-                order_id VARCHAR(50) PRIMARY KEY,
-                customer_id VARCHAR(50),
-                date_key DATETIME,
-                seller_id VARCHAR(50),
-                total_payment_value DECIMAL(10, 2),
-                total_freight_value DECIMAL(10, 2),
-                product_count INT,
-                review_score INT,
-                order_status VARCHAR(20)
-            )
+    order_id VARCHAR(50) PRIMARY KEY,
+    customer_id VARCHAR(50),
+    date_key DATETIME,
+    seller_id VARCHAR(50),
+    product_id VARCHAR(50), 
+    total_payment_value DECIMAL(10, 2),
+    total_freight_value DECIMAL(10, 2),
+    product_count INT,
+    review_score INT,
+    order_status VARCHAR(20)
+)
+
         END
         """))
 

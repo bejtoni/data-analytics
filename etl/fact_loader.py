@@ -34,7 +34,8 @@ def load_fact_order():
     item_agg = items.groupby("order_id", as_index=False).agg(
         total_freight_value=("freight_value", "sum"),
         product_count=("order_item_id", "count"),
-        seller_id=("seller_id", "first")
+        seller_id=("seller_id", "first"),
+        product_id=("product_id", "first")  # ili koristi .mode()[0] ako želiš najčešći
     )
 
     review_agg = reviews[["order_id", "review_score"]].drop_duplicates()
