@@ -10,10 +10,10 @@ if __name__ == "__main__":
     print("🚀 ETL pipeline started")
 
     # 1️⃣ CSV → staging PostgreSQL
-    create_tables_and_load_data()
+    # create_tables_and_load_data()
 
     # 2️⃣ API → staging.exchange_rates
-    fetch_and_insert_exchange_rates()
+    # fetch_and_insert_exchange_rates()
 
     # 3️⃣ SAMO INITIAL LOAD
     # run_initial_archive_loads()

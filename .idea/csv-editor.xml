@@ -31,13 +31,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\data\api\exchange_rates_2025-06-09-1252.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="\data\raw\olist_order_items_dataset.csv">
           <value>
             <Attribute>
