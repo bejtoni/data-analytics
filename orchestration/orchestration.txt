@@ -1,0 +1,5 @@
+The orchestration of the ETL pipeline will take place using the Windows Task Scheduler. The Task Scheduler will be configured to trigger a .bat script. This batch script will, in turn, execute a Python (.py) script located in this folder.
+
+The Python script is responsible for running the specific task assigned for the incremental update of all necessary items in the system.
+
+The incremental update ensures that only the newly added or modified records are processed, making the workflow efficient and reducing the load on the system.
